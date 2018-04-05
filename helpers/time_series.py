@@ -10,6 +10,7 @@ import librato
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import statsmodels.tsa.api as smt
+import scipy.stats as scs
 import numpy as np
 
 import seaborn as sns
@@ -80,25 +81,42 @@ def test_stationarity(timeseries,
         print(dfoutput)
     return dfoutput
 
-def tsplot(y, lags=60, title='', figsize=(14, 8)):
+def tsplot(y, lags=60, title='Original Time Series', figsize=(14, 8)):
     '''Examine the patterns of ACF and PACF, along with the time series plot and histogram.
-    
     Original source: https://tomaugspurger.github.io/modern-7-timeseries.html
     '''
+    if not isinstance(y, pd.Series):
+        y = pd.Series(y)
+
     fig = plt.figure(figsize=figsize)
-    layout = (2, 2)
+    layout = (3, 2)
     ts_ax   = plt.subplot2grid(layout, (0, 0))
     hist_ax = plt.subplot2grid(layout, (0, 1))
     acf_ax  = plt.subplot2grid(layout, (1, 0))
     pacf_ax = plt.subplot2grid(layout, (1, 1))
-    
+    qq_ax = plt.subplot2grid(layout, (2, 0))
+    pp_ax = plt.subplot2grid(layout, (2, 1))
+
     y.plot(ax=ts_ax)
     ts_ax.set_title(title)
-    y.plot(ax=hist_ax, kind='hist', bins=25)
-    hist_ax.set_title('Histogram')
+    bins = 25
+    mu = y.mean()
+    sigma = y.std()
+    y.plot(ax=hist_ax, kind='hist', bins=bins)
+    #failing to add bell curve
+    """
+    plt.plot(bins, 1/(sigma * np.sqrt(2 * np.pi)) *
+                np.exp( - (bins - mu)**2 / (2 * sigma**2) ),
+                linewidth=2, color='r', ax=hist_ax)
+    """
+    hist_ax.set_title('Distribution')
     smt.graphics.plot_acf(y, lags=lags, ax=acf_ax)
     smt.graphics.plot_pacf(y, lags=lags, ax=pacf_ax)
     [ax.set_xlim(0) for ax in [acf_ax, pacf_ax]]
+    sm.qqplot(y, line='s', ax=qq_ax)
+    qq_ax.set_title('QQ Plot')
+    scs.probplot(y, sparams=(y.mean(), y.std()), plot=pp_ax)
+
     sns.despine()
     fig.tight_layout()
     return ts_ax, acf_ax, pacf_ax
