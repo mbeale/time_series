@@ -85,6 +85,9 @@ def tsplot(y, lags=60, title='Original Time Series', figsize=(14, 8)):
     '''Examine the patterns of ACF and PACF, along with the time series plot and histogram.
     Original source: https://tomaugspurger.github.io/modern-7-timeseries.html
     '''
+    
+    if lags >= len(y):
+        lags = len(y) - 1
     if not isinstance(y, pd.Series):
         y = pd.Series(y)
 
